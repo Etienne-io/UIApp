@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/ui_scene_container"
+    tools:context="io.mapwize.uiapp.MapActivity"
+    android:background="@android:color/transparent">
+
+    <include layout="@layout/settings_bar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="@dimen/marginToScreen"
+        android:layout_marginStart="@dimen/marginToScreen"
+        android:layout_marginTop="@dimen/marginToTopScreen"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:clickable="true"
+        android:focusable="true"
+        />
+
+    <include layout="@layout/search_bar_widget"
+        android:id="@+id/search_bar_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/marginToScreen"
+        android:layout_marginStart="@dimen/marginToScreen"
+        android:layout_marginBottom="@dimen/marginToBottomScreen"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</android.support.constraint.ConstraintLayout>

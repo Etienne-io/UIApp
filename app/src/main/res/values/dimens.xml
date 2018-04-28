@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="marginToScreen">8dp</dimen>
+    <dimen name="marginToTopScreen">32dp</dimen>
+    <dimen name="marginToBottomScreen">56dp</dimen>
+</resources>
