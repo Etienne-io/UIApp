@@ -4,7 +4,8 @@ import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.Resources;
-import android.media.Image;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
 import android.support.transition.Scene;
@@ -14,6 +15,8 @@ import android.support.transition.TransitionManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
@@ -24,13 +27,18 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
-import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.maps.MapView;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class MapActivity extends AppCompatActivity {
+import io.mapwize.mapwizeformapbox.api.Api;
+import io.mapwize.mapwizeformapbox.api.ApiCallback;
+import io.mapwize.mapwizeformapbox.api.SearchParams;
+import io.mapwize.mapwizeformapbox.model.MapwizeObject;
+import io.mapwize.mapwizeformapbox.model.Translation;
+import io.mapwize.mapwizeformapbox.model.Venue;
+
+public class MapActivity extends AppCompatActivity implements SearchResultAdapter.OnItemClickListener{
 
     private MapView mapView;
     private ConstraintLayout settingsLayout;
@@ -43,6 +51,8 @@ public class MapActivity extends AppCompatActivity {
     private Transition searchToMapTransition;
     private RecyclerView searchResultRecyclerView;
     private SearchResultAdapter searchResultAdapter;
+
+    private SearchDataManager searchDataManager;
     Scene mAScene;
     Scene mAnotherScene;
 
@@ -56,11 +66,33 @@ public class MapActivity extends AppCompatActivity {
         //mapView = findViewById(R.id.mapboxMap);
         //mapView.onCreate(savedInstanceState);
 
-        initMapUiSceneComponent();
-
+        setupMapUiSceneComponent();
+        initSearchDataManager();
     }
 
-    private void initMapUiSceneComponent() {
+    private void initSearchDataManager() {
+        searchDataManager = new SearchDataManager();
+        SearchParams params = new SearchParams.Builder()
+                .setObjectClass(new String[]{"venue"})
+                .build();
+        Api.search(params, new ApiCallback<List<MapwizeObject>>() {
+            @Override
+            public void onSuccess(List<MapwizeObject> mapwizeObjects) {
+                Log.i("Debug", "Ended");
+                searchDataManager.setVenuesList(mapwizeObjects);
+            }
+
+            @Override
+            public void onFailure(Throwable throwable) {
+                Log.i("Debug", "Ended " + throwable.getMessage());
+            }
+        });
+    }
+
+    /*
+    Map Scene
+     */
+    private void setupMapUiSceneComponent() {
         settingsLayout = findViewById(R.id.settingsLayout);
         settingsButton = findViewById(R.id.settingsButton);
         settingsButton.setOnClickListener(new View.OnClickListener() {
@@ -87,12 +119,49 @@ public class MapActivity extends AppCompatActivity {
         });
     }
 
-    private void initSearchSceneComponent() {
+
+    /*
+    Search Scene
+     */
+    private void setupSearchSceneComponent() {
         searchEditText = findViewById(R.id.search_input_text);
-        searchEditText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+        searchEditText.addTextChangedListener(new TextWatcher() {
             @Override
-            public void onFocusChange(View v, boolean hasFocus) {
-                Log.i("Debug", "Focus " + hasFocus);
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (s.length() == 0) {
+                    searchResultAdapter.swapData(searchDataManager.getVenuesList());
+                } else {
+                    SearchParams params = new SearchParams.Builder()
+                            .setObjectClass(new String[]{"venue"})
+                            .setQuery(s.toString())
+                            .build();
+                    Api.search(params, new ApiCallback<List<MapwizeObject>>() {
+                        @Override
+                        public void onSuccess(final List<MapwizeObject> mapwizeObjects) {
+                            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    searchResultAdapter.swapData(mapwizeObjects);
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onFailure(Throwable throwable) {
+                        }
+                    });
+                }
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
             }
         });
         searchEditText.requestFocus();
@@ -102,10 +171,6 @@ public class MapActivity extends AppCompatActivity {
         menuButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                searchEditText.clearFocus();
-                searchEditText.setText("");
-                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                imm.hideSoftInputFromWindow(searchEditText.getWindowToken(), 0);
                 searchToMapTransition();
             }
         });
@@ -113,11 +178,22 @@ public class MapActivity extends AppCompatActivity {
         searchResultRecyclerView = findViewById(R.id.search_suggestions_list);
         searchResultAdapter = new SearchResultAdapter(this);
         searchResultRecyclerView.setAdapter(searchResultAdapter);
-        List<Object> data = new ArrayList<>();
-        data.add(new Object());data.add(new Object());data.add(new Object());data.add(new Object());
-        searchResultAdapter.swapData(data);
+        searchResultAdapter.swapData(searchDataManager.getVenuesList());
+        searchResultAdapter.setListener(this);
     }
 
+    @Override
+    public void onItemClick(Object item) {
+        if (item instanceof Venue) {
+            Venue venue = (Venue) item;
+            Log.i("Debug", "Venue : " + venue.getName());
+            searchToMapTransition();
+        }
+    }
+
+    /*
+    Transitions
+     */
     private void mapToSearchTransition() {
         uiSceneRoot = findViewById(R.id.ui_scene_root);
         mAScene = Scene.getSceneForLayout(uiSceneRoot, R.layout.activity_map_scene, this);
@@ -132,7 +208,7 @@ public class MapActivity extends AppCompatActivity {
 
             @Override
             public void onTransitionEnd(@NonNull Transition transition) {
-                initSearchSceneComponent();
+                setupSearchSceneComponent();
             }
 
             @Override
@@ -154,6 +230,11 @@ public class MapActivity extends AppCompatActivity {
     }
 
     private void searchToMapTransition() {
+        searchEditText.clearFocus();
+        searchEditText.setText("");
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(searchEditText.getWindowToken(), 0);
+
         uiSceneRoot = findViewById(R.id.ui_scene_root);
         mAScene = Scene.getSceneForLayout(uiSceneRoot, R.layout.activity_map_scene, this);
         mAnotherScene =
@@ -167,7 +248,7 @@ public class MapActivity extends AppCompatActivity {
 
             @Override
             public void onTransitionEnd(@NonNull Transition transition) {
-                initMapUiSceneComponent();
+                setupMapUiSceneComponent();
             }
 
             @Override
@@ -187,6 +268,7 @@ public class MapActivity extends AppCompatActivity {
         });
         TransitionManager.go(mAScene, searchToMapTransition);
     }
+
 
     private boolean settingExpanded = false;
     private void onSettingsClick(boolean expand) {
@@ -223,6 +305,8 @@ public class MapActivity extends AppCompatActivity {
         DisplayMetrics metrics = resources.getDisplayMetrics();
         return (int)(dp * (metrics.densityDpi / 160f));
     }
+
+
 
     /*
     @Override

@@ -2,20 +2,24 @@ package io.mapwize.uiapp;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import io.mapwize.mapwizeformapbox.model.Translation;
+import io.mapwize.mapwizeformapbox.model.Venue;
 
 public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapter.SearchItemViewHolder> {
 
 
     private List mSearchSuggestions = new ArrayList<>();
     private Context mContext;
-    private Listener mListener;
+    private OnItemClickListener mListener;
 
     SearchResultAdapter(Context context) {
         this.mContext = context;
@@ -24,16 +28,14 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
     void swapData(List searchSuggestions) {
         mSearchSuggestions = searchSuggestions;
         notifyDataSetChanged();
-        Log.i("Debug", "Swap data " + mSearchSuggestions.size());
     }
 
-    void setListener(Listener listener) {
+    void setListener(OnItemClickListener listener) {
         mListener = listener;
     }
 
     @Override
     public SearchItemViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        Log.i("Debug", "create view holder");
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.search_result_item, parent, false);
 
@@ -42,8 +44,16 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
 
     @Override
     public void onBindViewHolder(SearchItemViewHolder holder, int position) {
-        Log.i("Debug", "bind view holder");
         holder.itemView.setClickable(true);
+
+        Object suggestionItem = mSearchSuggestions.get(position);
+
+        if (suggestionItem instanceof Venue) {
+            Venue venue = (Venue) suggestionItem;
+            Translation translation = venue.getTranslation("en");
+            holder.titleView.setText(translation.getTitle());
+            holder.leftIcon.setImageDrawable(mContext.getDrawable(R.drawable.ic_domain_black_24dp));
+        }
     }
 
     @Override
@@ -53,23 +63,29 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
 
     class SearchItemViewHolder extends RecyclerView.ViewHolder {
 
+        ImageView leftIcon;
+        TextView titleView;
+
         SearchItemViewHolder(View itemView) {
             super(itemView);
-            Log.i("Debug", "touhou");
+            leftIcon = itemView.findViewById(R.id.suggestions_item_icon);
+            titleView = itemView.findViewById(R.id.suggestions_item_title);
+
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     int adapterPosition = getAdapterPosition();
                     if (mListener != null && adapterPosition != RecyclerView.NO_POSITION) {
-                        mListener.onItemSelected(mSearchSuggestions.get(adapterPosition));
+                        mListener.onItemClick(mSearchSuggestions.get(adapterPosition));
                     }
                 }
             });
         }
 
+
     }
 
-    public interface Listener {
-        void onItemSelected(Object item);
+    public interface OnItemClickListener {
+        void onItemClick(Object item);
     }
 }
