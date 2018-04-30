@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <transitionSet xmlns:android="http://schemas.android.com/apk/res/android"
     android:transitionOrdering="together">
-    <fade android:fadingMode="fade_out"
-        android:duration="000"/>
     <slide android:slideEdge="top"
         android:duration="300">
         <targets>
-            <target android:targetId="@id/search_bar_layout"/>
+            <target android:targetId="@id/content_card"/>
         </targets>
     </slide>
     <changeBounds />

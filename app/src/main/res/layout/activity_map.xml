@@ -8,24 +8,37 @@
     tools:context="io.mapwize.uiapp.MapActivity"
     android:background="#FFF">
 
-    <!--<com.mapbox.mapboxsdk.maps.MapView
+    <com.mapbox.mapboxsdk.maps.MapView
         android:id="@+id/mapboxMap"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:mapbox_uiLogo="false"
         app:mapbox_uiAttribution="false"
-        app:mapbox_styleUrl="https://outdoor.mapwize.io/styles/mapwize/style.json?key=1f04d780dc30b774c0c10f53e3c7d4ea"/>-->
+        app:mapbox_styleUrl="https://outdoor.mapwize.io/styles/mapwize/style.json?key=1f04d780dc30b774c0c10f53e3c7d4ea"/>
+
+    <include layout="@layout/settings_bar"
+        android:id="@+id/settings_bar_layout"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="@dimen/marginToScreen"
+        android:layout_marginStart="@dimen/marginToScreen"
+        android:layout_marginTop="@dimen/marginToTopScreen"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone"/>
 
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/ui_scene_root"
-        android:background="@android:color/transparent">
+        android:background="@android:color/transparent"
+        android:elevation="20dp">
 
         <include layout="@layout/activity_map_scene"/>
 
     </FrameLayout>
-
 
 
 </android.support.constraint.ConstraintLayout>

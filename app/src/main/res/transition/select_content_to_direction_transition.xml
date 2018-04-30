@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<transitionSet xmlns:android="http://schemas.android.com/apk/res/android"
+    android:transitionOrdering="together">
+    <changeBounds android:duration="100"/>
+    <fade android:fadingMode="fade_in">
+        <targets>
+            <target android:targetId="@+id/from_icon"/>
+            <target android:targetId="@+id/from_input_text"/>
+            <target android:targetId="@+id/to_icon"/>
+            <target android:targetId="@+id/to_input_text"/>
+        </targets>
+    </fade>
+
+</transitionSet>

@@ -1,5 +1,6 @@
 package io.mapwize.uiapp;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import io.mapwize.mapwizeformapbox.model.MapwizeObject;
@@ -10,9 +11,12 @@ public class SearchDataManager {
 
     List<MapwizeObject> venuesList;
     List<MapwizeObject> mainSearch;
-    List<MapwizeObject> mainFrom;
+    List<Place> mainFrom;
 
     public SearchDataManager() {
+        venuesList = new ArrayList<>();
+        mainSearch = new ArrayList<>();
+        mainFrom = new ArrayList<>();
     }
 
     public List<MapwizeObject> getVenuesList() {
@@ -31,11 +35,11 @@ public class SearchDataManager {
         this.mainSearch = mainSearch;
     }
 
-    public List<MapwizeObject> getMainFrom() {
+    public List<Place> getMainFrom() {
         return mainFrom;
     }
 
-    public void setMainFrom(List<MapwizeObject> mainFrom) {
+    public void setMainFrom(List<Place> mainFrom) {
         this.mainFrom = mainFrom;
     }
 }

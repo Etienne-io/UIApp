@@ -8,18 +8,6 @@
     tools:context="io.mapwize.uiapp.MapActivity"
     android:background="@android:color/transparent">
 
-    <include layout="@layout/settings_bar"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginEnd="@dimen/marginToScreen"
-        android:layout_marginStart="@dimen/marginToScreen"
-        android:layout_marginTop="@dimen/marginToTopScreen"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        android:clickable="true"
-        android:focusable="true"
-        />
-
     <include layout="@layout/search_bar_widget"
         android:id="@+id/search_bar_layout"
         android:layout_width="match_parent"

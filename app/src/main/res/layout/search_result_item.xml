@@ -24,9 +24,20 @@
         android:layout_height="wrap_content"
         android:text="Trop cool ta vie !"
         android:textColor="#000"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/suggestions_item_floor"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/suggestions_item_icon"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/suggestions_item_floor"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Trop cool ta vie !"
+        android:textColor="#999"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/suggestions_item_icon"
+        app:layout_constraintTop_toBottomOf="@+id/suggestions_item_title" />
 
 </android.support.constraint.ConstraintLayout>
