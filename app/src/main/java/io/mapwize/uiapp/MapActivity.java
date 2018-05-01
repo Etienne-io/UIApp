@@ -55,6 +55,7 @@ import java.util.List;
 
 import io.indoorlocation.core.IndoorLocation;
 import io.indoorlocation.core.IndoorLocationProviderListener;
+import io.mapwize.mapwizeformapbox.DirectionOptions;
 import io.mapwize.mapwizeformapbox.FollowUserMode;
 import io.mapwize.mapwizeformapbox.MapOptions;
 import io.mapwize.mapwizeformapbox.MapwizePlugin;
@@ -63,13 +64,15 @@ import io.mapwize.mapwizeformapbox.api.Api;
 import io.mapwize.mapwizeformapbox.api.ApiCallback;
 import io.mapwize.mapwizeformapbox.api.ApiFilter;
 import io.mapwize.mapwizeformapbox.api.SearchParams;
+import io.mapwize.mapwizeformapbox.model.Direction;
+import io.mapwize.mapwizeformapbox.model.DirectionPoint;
 import io.mapwize.mapwizeformapbox.model.LatLngFloor;
 import io.mapwize.mapwizeformapbox.model.MapwizeObject;
 import io.mapwize.mapwizeformapbox.model.Place;
 import io.mapwize.mapwizeformapbox.model.Translation;
 import io.mapwize.mapwizeformapbox.model.Venue;
 
-public class MapActivity extends AppCompatActivity implements SearchResultAdapter.OnItemClickListener{
+public class MapActivity extends AppCompatActivity {
 
     // Views and Layouts
     private MapView mapView;
@@ -89,6 +92,8 @@ public class MapActivity extends AppCompatActivity implements SearchResultAdapte
     private TextView directionButton;
     private EditText fromDirectionEditText;
     private EditText toDirectionEditText;
+    private ImageView fromDirectionImage;
+    private ImageView toDirectionImage;
 
 
     private SearchResultAdapter searchResultAdapter;
@@ -97,6 +102,10 @@ public class MapActivity extends AppCompatActivity implements SearchResultAdapte
     // Location provider
     private FusedGpsIndoorLocationProvider locationProvider;
     private boolean locationProviderActivated = false;
+
+    // Direction
+    private MapwizeObject fromDirectionPoint;
+    private MapwizeObject toDirectionPoint;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -195,6 +204,23 @@ public class MapActivity extends AppCompatActivity implements SearchResultAdapte
             locationButton.setImageResource(R.drawable.ic_explore_black_24dp);
             locationButton.setColorFilter(Color.argb(255, 197, 21, 134));
         }
+
+        mapwizePlugin.setOnPlaceClickListener(new MapwizePlugin.OnPlaceClickListener() {
+            @Override
+            public boolean onPlaceClick(Place place) {
+                selectContent(place);
+                return true;
+            }
+        });
+
+        mapwizePlugin.setOnMapClickListener(new MapwizePlugin.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLngFloor latLngFloor) {
+                if (selectedContent != null) {
+                    unselectContent();
+                }
+            }
+        });
     }
 
 
@@ -218,7 +244,6 @@ public class MapActivity extends AppCompatActivity implements SearchResultAdapte
         searchResultRecyclerView = findViewById(R.id.search_suggestions_list);
         searchResultAdapter = new SearchResultAdapter(this);
         searchResultRecyclerView.setAdapter(searchResultAdapter);
-        searchResultAdapter.setListener(this);
 
         if (mapwizePlugin.getVenue() == null) {
             initOutOfVenueSearch();
@@ -269,6 +294,14 @@ public class MapActivity extends AppCompatActivity implements SearchResultAdapte
             }
         });
         searchResultAdapter.swapData(searchDataManager.getVenuesList());
+        searchResultAdapter.setListener(new SearchResultAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(Object item) {
+                Venue venue = (Venue) item;
+                mapwizePlugin.centerOnVenue(venue);
+                searchToMapTransition();
+            }
+        });
     }
 
     private void initInVenueSearch() {
@@ -313,21 +346,16 @@ public class MapActivity extends AppCompatActivity implements SearchResultAdapte
             }
         });
         searchResultAdapter.swapData(searchDataManager.getMainSearch());
-    }
-
-    @Override
-    public void onItemClick(Object item) {
-        if (item instanceof Venue) {
-            Venue venue = (Venue) item;
-            mapwizePlugin.centerOnVenue(venue);
-            searchToMapTransition();
-        }
-
-        if (item instanceof Place) {
-            Place place = (Place) item;
-            centerOnPlace(place);
-            searchToSelectContentTransition(place);
-        }
+        searchResultAdapter.setListener(new SearchResultAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(Object item) {
+                if (item instanceof Place) {
+                    Place place = (Place) item;
+                    centerOnPlace(place);
+                    searchToSelectContentTransition(place);
+                }
+            }
+        });
     }
 
     /*
@@ -418,13 +446,6 @@ public class MapActivity extends AppCompatActivity implements SearchResultAdapte
                 contentTitleTextView = findViewById(R.id.content_title);
                 contentSubTitleTextView = findViewById(R.id.content_subtitle);
                 contentFloorTextView = findViewById(R.id.content_floor);
-                directionButton = findViewById(R.id.direction_button);
-                directionButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        selectContentToDirectionTransition();
-                    }
-                });
                 setupSelectContentView(mapwizeObject);
             }
 
@@ -474,6 +495,22 @@ public class MapActivity extends AppCompatActivity implements SearchResultAdapte
                     Place place = (Place) mapwizeObject;
                     mapwizePlugin.addMarker(place);
                 }
+                mapwizePlugin.setOnPlaceClickListener(new MapwizePlugin.OnPlaceClickListener() {
+                    @Override
+                    public boolean onPlaceClick(Place place) {
+                        selectContent(place);
+                        return true;
+                    }
+                });
+
+                mapwizePlugin.setOnMapClickListener(new MapwizePlugin.OnMapClickListener() {
+                    @Override
+                    public void onMapClick(LatLngFloor latLngFloor) {
+                        if (selectedContent != null) {
+                            unselectContent();
+                        }
+                    }
+                });
             }
 
             @Override
@@ -538,25 +575,20 @@ public class MapActivity extends AppCompatActivity implements SearchResultAdapte
         transition.addListener(new Transition.TransitionListener() {
             @Override
             public void onTransitionStart(@NonNull Transition transition) {
-                fromDirectionEditText = findViewById(R.id.from_input_text);
-                toDirectionEditText = findViewById(R.id.to_input_text);
-                fromDirectionEditText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-                    @Override
-                    public void onFocusChange(View v, boolean hasFocus) {
-                        directionToSearchDirectionTransition();
-                    }
-                });
-                toDirectionEditText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-                    @Override
-                    public void onFocusChange(View v, boolean hasFocus) {
-                        directionToSearchDirectionTransition();
-                    }
-                });
+                setupDirectionSceneComponents();
             }
 
             @Override
             public void onTransitionEnd(@NonNull Transition transition) {
-
+                if (fromDirectionPoint == null) {
+                    directionToSearchDirectionTransition(true);
+                }
+                else if (toDirectionPoint == null) {
+                    directionToSearchDirectionTransition(false);
+                }
+                else {
+                    startDirection(fromDirectionPoint, toDirectionPoint, true);
+                }
             }
 
             @Override
@@ -577,7 +609,48 @@ public class MapActivity extends AppCompatActivity implements SearchResultAdapte
         TransitionManager.go(scene, transition);
     }
 
-    private void directionToSearchDirectionTransition() {
+    private void setupDirectionSceneComponents() {
+        fromDirectionEditText = findViewById(R.id.from_input_text);
+        toDirectionEditText = findViewById(R.id.to_input_text);
+        fromDirectionEditText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                directionToSearchDirectionTransition(true);
+            }
+        });
+        toDirectionEditText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                directionToSearchDirectionTransition(false);
+            }
+        });
+
+        toDirectionEditText.setText(toDirectionPoint.getTranslation("en").getTitle());
+        if (fromDirectionPoint != null) {
+            fromDirectionEditText.setText(fromDirectionPoint.getTranslation("en").getTitle());
+        }
+
+        directionButton = findViewById(R.id.direction_button);
+        directionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mapwizePlugin.removeDirection();
+                if (toDirectionPoint != null) {
+                    selectedContent = toDirectionPoint;
+                    directionToSelectContentTransition();
+                }
+                else {
+                    directionToMapTransition();
+                }
+            }
+        });
+
+        mapwizePlugin.setOnPlaceClickListener(null);
+
+        mapwizePlugin.setOnMapClickListener(null);
+    }
+
+    private void directionToSearchDirectionTransition(final boolean isFrom) {
         uiSceneRoot = findViewById(R.id.ui_scene_root);
         Scene scene = Scene.getSceneForLayout(uiSceneRoot, R.layout.activity_search_direction_scene, this);
         Transition transition = TransitionInflater.from(this).inflateTransition(R.transition.direction_to_search_direction_transition);
@@ -585,7 +658,7 @@ public class MapActivity extends AppCompatActivity implements SearchResultAdapte
             @Override
             public void onTransitionStart(@NonNull Transition transition) {
                 uiSceneRoot.setBackgroundColor(Color.argb(255, 238, 238, 238));
-                setupDirectionSearchSceneComponent();
+                setupDirectionSearchSceneComponent(isFrom);
 
             }
 
@@ -612,28 +685,170 @@ public class MapActivity extends AppCompatActivity implements SearchResultAdapte
         TransitionManager.go(scene, transition);
     }
 
-    private void setupDirectionSearchSceneComponent() {
+    private void searchDirectionToDirectionTransition() {
+        uiSceneRoot = findViewById(R.id.ui_scene_root);
+        Scene scene = Scene.getSceneForLayout(uiSceneRoot, R.layout.activity_direction_scene, this);
+        Transition transition = TransitionInflater.from(this).inflateTransition(R.transition.direction_to_search_direction_transition);
+        transition.addListener(new Transition.TransitionListener() {
+            @Override
+            public void onTransitionStart(@NonNull Transition transition) {
+                setupDirectionSceneComponents();
+            }
+
+            @Override
+            public void onTransitionEnd(@NonNull Transition transition) {
+                uiSceneRoot.setBackgroundColor(Color.TRANSPARENT);
+                if (fromDirectionPoint != null && toDirectionPoint != null) {
+                    startDirection(fromDirectionPoint, toDirectionPoint, true);
+                }
+            }
+
+            @Override
+            public void onTransitionCancel(@NonNull Transition transition) {
+
+            }
+
+            @Override
+            public void onTransitionPause(@NonNull Transition transition) {
+
+            }
+
+            @Override
+            public void onTransitionResume(@NonNull Transition transition) {
+
+            }
+        });
+        TransitionManager.go(scene, transition);
+    }
+
+    private void directionToMapTransition() {
+        uiSceneRoot = findViewById(R.id.ui_scene_root);
+        Scene scene = Scene.getSceneForLayout(uiSceneRoot, R.layout.activity_map_scene, this);
+        Transition transition = TransitionInflater.from(this).inflateTransition(R.transition.select_content_to_direction_transition);
+        transition.addListener(new Transition.TransitionListener() {
+            @Override
+            public void onTransitionStart(@NonNull Transition transition) {
+                setupMapUiSceneComponent();
+                fromDirectionPoint = null;
+                toDirectionPoint = null;
+            }
+
+            @Override
+            public void onTransitionEnd(@NonNull Transition transition) {
+
+            }
+
+            @Override
+            public void onTransitionCancel(@NonNull Transition transition) {
+
+            }
+
+            @Override
+            public void onTransitionPause(@NonNull Transition transition) {
+
+            }
+
+            @Override
+            public void onTransitionResume(@NonNull Transition transition) {
+
+            }
+        });
+        TransitionManager.go(scene, transition);
+    }
+
+    private void directionToSelectContentTransition() {
+        uiSceneRoot = findViewById(R.id.ui_scene_root);
+        Scene scene = Scene.getSceneForLayout(uiSceneRoot, R.layout.activity_content_selected_scene, this);
+        Transition transition = TransitionInflater.from(this).inflateTransition(R.transition.select_content_to_direction_transition);
+        transition.addListener(new Transition.TransitionListener() {
+            @Override
+            public void onTransitionStart(@NonNull Transition transition) {
+                contentIconImageView = findViewById(R.id.content_icon);
+                contentTitleTextView = findViewById(R.id.content_title);
+                contentSubTitleTextView = findViewById(R.id.content_subtitle);
+                contentFloorTextView = findViewById(R.id.content_floor);
+                //setupSelectContentView(selectedContent);
+                if (selectedContent != null) {
+                    selectContent(selectedContent);
+                }
+                fromDirectionPoint = null;
+                toDirectionPoint = null;
+                mapwizePlugin.setOnPlaceClickListener(new MapwizePlugin.OnPlaceClickListener() {
+                    @Override
+                    public boolean onPlaceClick(Place place) {
+                        selectContent(place);
+                        return true;
+                    }
+                });
+
+                mapwizePlugin.setOnMapClickListener(new MapwizePlugin.OnMapClickListener() {
+                    @Override
+                    public void onMapClick(LatLngFloor latLngFloor) {
+                        if (selectedContent != null) {
+                            unselectContent();
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void onTransitionEnd(@NonNull Transition transition) {
+
+            }
+
+            @Override
+            public void onTransitionCancel(@NonNull Transition transition) {
+
+            }
+
+            @Override
+            public void onTransitionPause(@NonNull Transition transition) {
+
+            }
+
+            @Override
+            public void onTransitionResume(@NonNull Transition transition) {
+
+            }
+        });
+        TransitionManager.go(scene, transition);
+    }
+
+    private void setupDirectionSearchSceneComponent(boolean isFrom) {
         menuButton = findViewById(R.id.menuButton);
         menuButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //searchToMapTransition();
+                searchDirectionToDirectionTransition();
             }
         });
 
-        initFromSearch();
+        if (isFrom) {
+            initFromSearch();
+        }
+        else {
+            initToSearch();
+        }
     }
 
     private void initFromSearch() {
         fromDirectionEditText = findViewById(R.id.from_input_text);
         fromDirectionEditText.requestFocus();
+        fromDirectionEditText.setText("");
+        fromDirectionImage = findViewById(R.id.from_icon);
+        fromDirectionImage.setColorFilter(Color.argb(255, 197, 21, 134));
+        toDirectionEditText = findViewById(R.id.to_input_text);
+        toDirectionEditText.setClickable(false);
+        if (toDirectionPoint != null) {
+            toDirectionEditText.setText(toDirectionPoint.getTranslation("en").getTitle());
+        }
+
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.showSoftInput(fromDirectionEditText, InputMethodManager.SHOW_IMPLICIT);
 
         searchResultRecyclerView = findViewById(R.id.search_suggestions_list);
         searchResultAdapter = new SearchResultAdapter(this);
         searchResultRecyclerView.setAdapter(searchResultAdapter);
-        searchResultAdapter.setListener(this);
         fromDirectionEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -643,7 +858,7 @@ public class MapActivity extends AppCompatActivity implements SearchResultAdapte
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (s.length() == 0) {
-                    searchResultAdapter.swapData(searchDataManager.getVenuesList());
+                    searchResultAdapter.swapData(searchDataManager.getMainFrom());
                 } else {
                     SearchParams params = new SearchParams.Builder()
                             .setObjectClass(new String[]{"place"})
@@ -674,7 +889,103 @@ public class MapActivity extends AppCompatActivity implements SearchResultAdapte
 
             }
         });
+        searchResultAdapter.swapData(searchDataManager.getMainFrom());
+        searchResultAdapter.setListener(new SearchResultAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(Object item) {
+                fromDirectionPoint = (MapwizeObject) item;
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(fromDirectionEditText.getWindowToken(), 0);
+                searchDirectionToDirectionTransition();
+            }
+        });
+    }
+
+    private void initToSearch() {
+        toDirectionEditText = findViewById(R.id.to_input_text);
+        toDirectionEditText.requestFocus();
+        toDirectionEditText.setText("");
+        toDirectionImage = findViewById(R.id.to_icon);
+        toDirectionImage.setColorFilter(Color.argb(255, 197, 21, 134));
+        fromDirectionEditText = findViewById(R.id.from_input_text);
+        fromDirectionEditText.setClickable(false);
+        if (fromDirectionPoint != null) {
+            fromDirectionEditText.setText(fromDirectionPoint.getTranslation("en").getTitle());
+        }
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.showSoftInput(toDirectionEditText, InputMethodManager.SHOW_IMPLICIT);
+
+        searchResultRecyclerView = findViewById(R.id.search_suggestions_list);
+        searchResultAdapter = new SearchResultAdapter(this);
+        searchResultRecyclerView.setAdapter(searchResultAdapter);
+        toDirectionEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (s.length() == 0) {
+                    searchResultAdapter.swapData(searchDataManager.getMainSearch());
+                } else {
+                    SearchParams params = new SearchParams.Builder()
+                            .setObjectClass(new String[]{"place", "placeList"})
+                            .setQuery(s.toString())
+                            .setVenueId(mapwizePlugin.getVenue().getId())
+                            .build();
+                    Api.search(params, new ApiCallback<List<MapwizeObject>>() {
+                        @Override
+                        public void onSuccess(final List<MapwizeObject> mapwizeObjects) {
+                            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    searchResultAdapter.swapData(mapwizeObjects);
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onFailure(Throwable throwable) {
+                        }
+                    });
+                }
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
         searchResultAdapter.swapData(searchDataManager.getMainSearch());
+        searchResultAdapter.setListener(new SearchResultAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(Object item) {
+                toDirectionPoint = (MapwizeObject) item;
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(toDirectionEditText.getWindowToken(), 0);
+                searchDirectionToDirectionTransition();
+            }
+        });
+    }
+
+    private void startDirection(MapwizeObject from, MapwizeObject to, boolean isAccessible) {
+        mapwizePlugin.removeMarkers();
+        DirectionPoint f = (DirectionPoint) from;
+        DirectionPoint t = (DirectionPoint) to;
+        Api.getDirection(f, t, isAccessible, new ApiCallback<Direction>() {
+            @Override
+            public void onSuccess(Direction direction) {
+                DirectionOptions.Builder optsBuilder = new DirectionOptions.Builder();
+                mapwizePlugin.setDirection(direction, optsBuilder.build());
+            }
+
+            @Override
+            public void onFailure(Throwable throwable) {
+
+            }
+        });
     }
 
     private boolean settingExpanded = false;
@@ -753,6 +1064,15 @@ public class MapActivity extends AppCompatActivity implements SearchResultAdapte
             NumberFormat nf = new DecimalFormat("###.###");
             contentFloorTextView.setText(String.format("Floor %1$s", nf.format(place.getFloor())));
         }
+
+        directionButton = findViewById(R.id.direction_button);
+        directionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toDirectionPoint = selectedContent;
+                selectContentToDirectionTransition();
+            }
+        });
     }
 
     /*
@@ -827,23 +1147,6 @@ public class MapActivity extends AppCompatActivity implements SearchResultAdapte
             public boolean onVenueClick(Venue venue) {
                 mapwizePlugin.centerOnVenue(venue);
                 return false;
-            }
-        });
-
-        mapwizePlugin.setOnPlaceClickListener(new MapwizePlugin.OnPlaceClickListener() {
-            @Override
-            public boolean onPlaceClick(Place place) {
-                selectContent(place);
-                return true;
-            }
-        });
-
-        mapwizePlugin.setOnMapClickListener(new MapwizePlugin.OnMapClickListener() {
-            @Override
-            public void onMapClick(LatLngFloor latLngFloor) {
-                if (selectedContent != null) {
-                    unselectContent();
-                }
             }
         });
 
@@ -959,12 +1262,18 @@ public class MapActivity extends AppCompatActivity implements SearchResultAdapte
         if (mapView != null) {
             mapView.onResume();
         }
+        if (mapwizePlugin != null) {
+            mapwizePlugin.onResume();
+        }
     }
 
     @Override
     public void onPause() {
         super.onPause();
         mapView.onPause();
+        if (mapwizePlugin != null) {
+            mapwizePlugin.onPause();
+        }
     }
 
     @Override
