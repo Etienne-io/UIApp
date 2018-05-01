@@ -640,13 +640,9 @@ public class MapActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 mapwizePlugin.removeDirection();
-                if (toDirectionPoint != null) {
-                    selectedContent = toDirectionPoint;
-                    directionToSelectContentTransition();
-                }
-                else {
-                    directionToMapTransition();
-                }
+                mapwizePlugin.removeMarkers();
+                selectedContent = null;
+                directionToMapTransition();
             }
         });
 
@@ -869,9 +865,14 @@ public class MapActivity extends AppCompatActivity {
 
     private void setupDirectionSearchSceneComponent(boolean isFrom) {
         menuButton = findViewById(R.id.menuButton);
+        fromDirectionEditText = findViewById(R.id.from_input_text);
+        toDirectionEditText = findViewById(R.id.to_input_text);
         menuButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(fromDirectionEditText.getWindowToken(), 0);
+                imm.hideSoftInputFromWindow(toDirectionEditText.getWindowToken(), 0);
                 searchDirectionToDirectionTransition();
             }
         });
@@ -885,13 +886,14 @@ public class MapActivity extends AppCompatActivity {
     }
 
     private void initFromSearch() {
-        fromDirectionEditText = findViewById(R.id.from_input_text);
+
         fromDirectionEditText.requestFocus();
         fromDirectionEditText.setText("");
         fromDirectionImage = findViewById(R.id.from_icon);
         fromDirectionImage.setColorFilter(Color.argb(255, 197, 21, 134));
         toDirectionEditText = findViewById(R.id.to_input_text);
         toDirectionEditText.setClickable(false);
+        toDirectionEditText.setEnabled(false);
         if (toDirectionPoint != null) {
             toDirectionEditText.setText(toDirectionPoint.getTranslation("en").getTitle());
         }
@@ -962,6 +964,7 @@ public class MapActivity extends AppCompatActivity {
         toDirectionImage.setColorFilter(Color.argb(255, 197, 21, 134));
         fromDirectionEditText = findViewById(R.id.from_input_text);
         fromDirectionEditText.setClickable(false);
+        fromDirectionEditText.setEnabled(false);
         if (fromDirectionPoint != null) {
             fromDirectionEditText.setText(fromDirectionPoint.getTranslation("en").getTitle());
         }
