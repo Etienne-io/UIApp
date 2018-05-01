@@ -6,6 +6,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Camera;
@@ -21,6 +22,7 @@ import android.support.transition.TransitionInflater;
 import android.support.transition.TransitionManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
@@ -28,10 +30,12 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -52,6 +56,7 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import io.indoorlocation.core.IndoorLocation;
 import io.indoorlocation.core.IndoorLocationProviderListener;
@@ -70,6 +75,7 @@ import io.mapwize.mapwizeformapbox.model.LatLngFloor;
 import io.mapwize.mapwizeformapbox.model.MapwizeObject;
 import io.mapwize.mapwizeformapbox.model.Place;
 import io.mapwize.mapwizeformapbox.model.Translation;
+import io.mapwize.mapwizeformapbox.model.Universe;
 import io.mapwize.mapwizeformapbox.model.Venue;
 
 public class MapActivity extends AppCompatActivity {
@@ -79,6 +85,8 @@ public class MapActivity extends AppCompatActivity {
     private MapwizePlugin mapwizePlugin;
     private ConstraintLayout settingsLayout;
     private ImageButton settingsButton;
+    private ImageButton universesButton;
+    private ImageButton languagesButton;
     private ViewGroup uiSceneRoot;
     private TextView searchTextView;
     private EditText searchEditText;
@@ -128,6 +136,8 @@ public class MapActivity extends AppCompatActivity {
                 .logoEnabled(false)
                 .build();
         mapwizePlugin = new MapwizePlugin(mapView, mapOptions, uiSettings);
+
+        initSettingsLayout();
         setupMapwizeListeners();
         setupMapUiSceneComponent();
         initSearchDataManager();
@@ -155,14 +165,6 @@ public class MapActivity extends AppCompatActivity {
     Map Scene
      */
     private void setupMapUiSceneComponent() {
-        settingsLayout = findViewById(R.id.settings_bar_layout);
-        settingsButton = findViewById(R.id.settingsButton);
-        settingsButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                onSettingsClick(!settingExpanded);
-            }
-        });
 
         searchTextView = findViewById(R.id.search_text_view);
         searchTextView.setOnClickListener(new View.OnClickListener() {
@@ -1124,6 +1126,82 @@ public class MapActivity extends AppCompatActivity {
                 selectContentToDirectionTransition();
             }
         });
+    }
+
+    /*
+    Settings button
+     */
+    private void initSettingsLayout() {
+        settingsLayout = findViewById(R.id.settings_bar_layout);
+        settingsButton = findViewById(R.id.settingsButton);
+        settingsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onSettingsClick(!settingExpanded);
+            }
+        });
+        universesButton = findViewById(R.id.universesButton);
+        universesButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onSettingsClick(!settingExpanded);
+                displayUniversesSelector();
+            }
+        });
+        languagesButton = findViewById(R.id.languagesButton);
+        languagesButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onSettingsClick(!settingExpanded);
+                displayLanguagesSelector();
+            }
+        });
+    }
+
+    private void displayUniversesSelector() {
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        final View dialogView = inflater.inflate(R.layout.universes_alert, null);
+
+        RecyclerView universesList = dialogView.findViewById(R.id.universes_list);
+        UniversesAdapter universesAdapter = new UniversesAdapter(this);
+        universesList.setAdapter(universesAdapter);
+        universesAdapter.swapData(mapwizePlugin.getVenue().getUniverses());
+        universesAdapter.setListener(new UniversesAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(Universe item) {
+                mapwizePlugin.setUniverseForVenue(item, mapwizePlugin.getVenue());
+                alertDialog.dismiss();
+            }
+        });
+        dialogBuilder.setView(dialogView);
+
+        alertDialog = dialogBuilder.create();
+        alertDialog.show();
+    }
+
+    AlertDialog alertDialog;
+    private void displayLanguagesSelector() {
+
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        final View dialogView = inflater.inflate(R.layout.languages_alert, null);
+
+        RecyclerView languagesList = dialogView.findViewById(R.id.languages_list);
+        LanguagesAdapter languagesAdapter = new LanguagesAdapter(this);
+        languagesList.setAdapter(languagesAdapter);
+        languagesAdapter.swapData(mapwizePlugin.getVenue().getSupportedLanguages());
+        languagesAdapter.setListener(new LanguagesAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(Locale item) {
+                mapwizePlugin.setLanguageForVenue(item.getLanguage(), mapwizePlugin.getVenue());
+                alertDialog.dismiss();
+            }
+        });
+        dialogBuilder.setView(dialogView);
+
+        alertDialog = dialogBuilder.create();
+        alertDialog.show();
     }
 
     /*
