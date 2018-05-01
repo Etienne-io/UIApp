@@ -94,6 +94,8 @@ public class MapActivity extends AppCompatActivity {
     private EditText toDirectionEditText;
     private ImageView fromDirectionImage;
     private ImageView toDirectionImage;
+    private ImageView swapDirectionButton;
+    private ImageView accessibleDirectionButton;
 
 
     private SearchResultAdapter searchResultAdapter;
@@ -106,6 +108,7 @@ public class MapActivity extends AppCompatActivity {
     // Direction
     private MapwizeObject fromDirectionPoint;
     private MapwizeObject toDirectionPoint;
+    private boolean isAccessible = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -645,6 +648,54 @@ public class MapActivity extends AppCompatActivity {
             }
         });
 
+        swapDirectionButton = findViewById(R.id.swap_icon);
+        swapDirectionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                MapwizeObject tmp = fromDirectionPoint;
+                fromDirectionPoint = toDirectionPoint;
+                toDirectionPoint = tmp;
+                if (fromDirectionPoint != null) {
+                    fromDirectionEditText.setText(fromDirectionPoint.getTranslation("en").getTitle());
+                }
+                else {
+                    fromDirectionEditText.setText("");
+                }
+                if (toDirectionPoint != null) {
+                    toDirectionEditText.setText(toDirectionPoint.getTranslation("en").getTitle());
+                }
+                else {
+                    toDirectionEditText.setText("");
+                }
+                if (fromDirectionPoint != null && toDirectionPoint != null) {
+                    startDirection(fromDirectionPoint, toDirectionPoint, isAccessible);
+                }
+            }
+        });
+
+        accessibleDirectionButton = findViewById(R.id.accessibility_icon);
+        if (isAccessible) {
+            accessibleDirectionButton.setColorFilter(Color.argb(255, 197, 21, 134));
+        }
+        else {
+            accessibleDirectionButton.setColorFilter(Color.TRANSPARENT);
+        }
+        accessibleDirectionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                isAccessible = !isAccessible;
+                if (isAccessible) {
+                    accessibleDirectionButton.setColorFilter(Color.argb(255, 197, 21, 134));
+                }
+                else {
+                    accessibleDirectionButton.setColorFilter(Color.TRANSPARENT);
+                }
+                if (fromDirectionPoint != null && toDirectionPoint != null) {
+                    startDirection(fromDirectionPoint, toDirectionPoint, isAccessible);
+                }
+            }
+        });
+
         mapwizePlugin.setOnPlaceClickListener(null);
 
         mapwizePlugin.setOnMapClickListener(null);
@@ -699,7 +750,7 @@ public class MapActivity extends AppCompatActivity {
             public void onTransitionEnd(@NonNull Transition transition) {
                 uiSceneRoot.setBackgroundColor(Color.TRANSPARENT);
                 if (fromDirectionPoint != null && toDirectionPoint != null) {
-                    startDirection(fromDirectionPoint, toDirectionPoint, true);
+                    startDirection(fromDirectionPoint, toDirectionPoint, isAccessible);
                 }
             }
 
