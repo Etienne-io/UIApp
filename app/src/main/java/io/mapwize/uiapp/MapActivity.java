@@ -15,6 +15,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
+import android.support.design.widget.BottomSheetBehavior;
+import android.support.design.widget.BottomSheetDialog;
 import android.support.transition.AutoTransition;
 import android.support.transition.Scene;
 import android.support.transition.Transition;
@@ -144,6 +146,34 @@ public class MapActivity extends AppCompatActivity {
         initLocationManager();
     }
 
+    private void displayBottomSheetDialog() {
+        final BottomSheetDialog dialog = new BottomSheetDialog(this);
+        View contentView = View.inflate(this, R.layout.menu_layout, null);
+        dialog.setContentView(contentView);
+
+        BottomSheetBehavior mBottomSheetBehavior = BottomSheetBehavior.from((View) contentView.getParent());
+
+        if (mBottomSheetBehavior != null) {
+            mBottomSheetBehavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+
+                @Override
+                public void onStateChanged(@NonNull View bottomSheet, int newState) {
+                    //showing the different states
+                    switch (newState) {
+                        case BottomSheetBehavior.STATE_HIDDEN:
+                            dialog.dismiss(); //if you want the modal to be dismissed when user drags the bottomsheet down
+                            break;
+                    }
+                }
+
+                @Override
+                public void onSlide(@NonNull View bottomSheet, float slideOffset) {
+                }
+            });
+        }
+        dialog.show();
+    }
+
     private void initSearchDataManager() {
         searchDataManager = new SearchDataManager();
         SearchParams params = new SearchParams.Builder()
@@ -178,7 +208,7 @@ public class MapActivity extends AppCompatActivity {
         menuButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.i("Debug", "Menu button click");
+                displayBottomSheetDialog();
             }
         });
 

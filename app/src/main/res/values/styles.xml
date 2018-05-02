@@ -9,7 +9,7 @@
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
 
         <item name="android:windowTranslucentStatus">true</item>
-        <item name="android:windowTranslucentNavigation">true</item>
+        <item name="android:windowTranslucentNavigation">false</item>
 
         <item name="colorControlNormal">#eee</item>
         <item name="colorControlActivated">#C51586</item>

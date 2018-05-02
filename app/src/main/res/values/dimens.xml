@@ -2,5 +2,5 @@
 <resources>
     <dimen name="marginToScreen">8dp</dimen>
     <dimen name="marginToTopScreen">32dp</dimen>
-    <dimen name="marginToBottomScreen">56dp</dimen>
+    <dimen name="marginToBottomScreen">8dp</dimen>
 </resources>
