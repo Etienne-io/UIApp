@@ -50,13 +50,14 @@
 
             <ImageView
                 android:id="@+id/from_icon"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@drawable/ic_location_searching_black_24dp"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_adjust_black_24dp"
                 app:layout_constraintStart_toEndOf="@+id/menuButton"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="@id/guideline"
-                android:layout_marginStart="8dp"/>
+                android:layout_marginStart="8dp"
+                android:tint="#777"/>
 
             <EditText
                 android:id="@+id/from_input_text"
@@ -64,36 +65,40 @@
                 android:layout_height="wrap_content"
                 android:textColor="#000"
                 android:textSize="14sp"
-                android:hint="From"
+                android:hint="Choose a starting point"
+                android:maxLines="1"
+                android:singleLine="true"
                 android:textColorHint="#777"
                 app:layout_constraintStart_toEndOf="@+id/from_icon"
                 app:layout_constraintEnd_toStartOf="@+id/swap_icon"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="@id/guideline"
-                android:layout_marginStart="8dp"/>
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="8dp"/>
 
             <ImageView
                 android:id="@+id/swap_icon"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:src="@drawable/ic_swap_vert_black_24dp"
                 app:layout_constraintStart_toEndOf="@+id/from_input_text"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="@id/guideline"
                 app:layout_constraintEnd_toEndOf="parent"
                 android:padding="8dp"
-                android:visibility="invisible"/>
+                android:visibility="gone"/>
 
 
             <ImageView
                 android:id="@+id/to_icon"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
                 android:src="@drawable/ic_location_on_black_24dp"
                 app:layout_constraintStart_toEndOf="@+id/menuButton"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintTop_toTopOf="@id/guideline"
-                android:layout_marginStart="8dp"/>
+                android:layout_marginStart="8dp"
+                android:tint="#777"/>
 
             <EditText
                 android:id="@+id/to_input_text"
@@ -101,25 +106,28 @@
                 android:layout_height="wrap_content"
                 android:textColor="#000"
                 android:textSize="14sp"
-                android:hint="To"
+                android:hint="Choose a destination"
+                android:maxLines="1"
+                android:singleLine="true"
                 android:textColorHint="#777"
                 app:layout_constraintStart_toEndOf="@+id/to_icon"
                 app:layout_constraintEnd_toStartOf="@+id/accessibility_icon"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintTop_toTopOf="@id/guideline"
-                android:layout_marginStart="8dp"/>
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="8dp"/>
 
             <ImageView
                 android:id="@+id/accessibility_icon"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:src="@drawable/ic_accessible_black_24dp"
                 app:layout_constraintStart_toEndOf="@+id/to_input_text"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintTop_toTopOf="@id/guideline"
                 app:layout_constraintEnd_toEndOf="parent"
                 android:padding="8dp"
-                android:visibility="invisible"/>
+                android:visibility="gone"/>
 
         </android.support.constraint.ConstraintLayout>
 

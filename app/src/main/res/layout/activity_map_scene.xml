@@ -11,7 +11,7 @@
     <include layout="@layout/search_bar_widget"
         android:id="@+id/search_bar_layout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="48dp"
         android:layout_marginEnd="@dimen/marginToScreen"
         android:layout_marginStart="@dimen/marginToScreen"
         android:layout_marginBottom="@dimen/marginToBottomScreen"
