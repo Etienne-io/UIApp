@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<transitionSet xmlns:android="http://schemas.android.com/apk/res/android"
+    android:transitionOrdering="together">
+    <slide android:slideEdge="bottom"
+        android:duration="500">
+        <targets>
+            <target android:targetId="@id/content_direction_card"/>
+            <target android:targetId="@id/content_direction_layout"/>
+            <target android:targetId="@id/guideline"/>
+            <target android:targetId="@id/from_icon"/>
+            <target android:targetId="@id/from_input_text"/>
+            <target android:targetId="@id/swap_icon"/>
+            <target android:targetId="@id/to_icon"/>
+            <target android:targetId="@id/to_input_text"/>
+            <target android:targetId="@id/accessibility_icon"/>
+        </targets>
+    </slide>
+    <slide android:slideEdge="top"
+        android:duration="500">
+        <targets>
+            <target android:targetId="@id/header_card"/>
+            <target android:targetId="@id/header_direction_layout"/>
+            <target android:targetId="@id/distance_layout"/>
+            <target android:targetId="@id/distance_icon"/>
+            <target android:targetId="@id/distance_text"/>
+            <target android:targetId="@id/header_guideline"/>
+            <target android:targetId="@id/time_icon"/>
+            <target android:targetId="@id/time_text"/>
+            <target android:targetId="@id/accessibility_icon"/>
+        </targets>
+    </slide>
+
+</transitionSet>

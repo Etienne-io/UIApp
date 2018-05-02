@@ -27,14 +27,19 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
@@ -42,6 +47,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.mapbox.mapboxsdk.Mapbox;
@@ -99,17 +106,14 @@ public class MapActivity extends AppCompatActivity {
     private TextView contentFloorTextView;
     private RecyclerView searchResultRecyclerView;
     private ImageButton locationButton;
-    private TextView directionButton;
-    private EditText fromDirectionEditText;
-    private EditText toDirectionEditText;
-    private ImageView fromDirectionImage;
-    private ImageView toDirectionImage;
-    private ImageView swapDirectionButton;
-    private ImageView accessibleDirectionButton;
+
 
 
     private SearchResultAdapter searchResultAdapter;
     private SearchDataManager searchDataManager;
+
+    // Bottom Menu
+    private ImageView accessKeyImageView;
 
     // Location provider
     private FusedGpsIndoorLocationProvider locationProvider;
@@ -119,6 +123,16 @@ public class MapActivity extends AppCompatActivity {
     private MapwizeObject fromDirectionPoint;
     private MapwizeObject toDirectionPoint;
     private boolean isAccessible = false;
+    private TextView directionButton;
+    private EditText fromDirectionEditText;
+    private EditText toDirectionEditText;
+    private ImageView fromDirectionImage;
+    private ImageView toDirectionImage;
+    private ImageView swapDirectionButton;
+    private ImageView accessibleDirectionButton;
+    private ImageView distanceDirectionImage;
+    private TextView timeDirectionTextView;
+    private TextView distanceDirectionTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -158,10 +172,9 @@ public class MapActivity extends AppCompatActivity {
 
                 @Override
                 public void onStateChanged(@NonNull View bottomSheet, int newState) {
-                    //showing the different states
                     switch (newState) {
                         case BottomSheetBehavior.STATE_HIDDEN:
-                            dialog.dismiss(); //if you want the modal to be dismissed when user drags the bottomsheet down
+                            dialog.dismiss();
                             break;
                     }
                 }
@@ -172,6 +185,121 @@ public class MapActivity extends AppCompatActivity {
             });
         }
         dialog.show();
+
+        accessKeyImageView = dialog.findViewById(R.id.acces_icon);
+        accessKeyImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                displayAccessDialog();
+                dialog.dismiss();
+            }
+        });
+    }
+
+    private void displayAccessDialog() {
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(MapActivity.this);
+        alertDialog.setTitle("Enter your access key");
+        alertDialog.setMessage("Access key is awesome");
+        final EditText input = new EditText(MapActivity.this);
+        input.setMaxLines(1);
+        input.setSingleLine(true);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT);
+        input.setLayoutParams(lp);
+        alertDialog.setView(input);
+        alertDialog.setPositiveButton(R.string.ok,
+                new DialogInterface.OnClickListener() {
+                    public void onClick(final DialogInterface dialog, int which) {
+                        handleAccessKey(input.getText().toString());
+                    }
+                });
+
+        alertDialog.setNegativeButton(R.string.cancel,
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+
+
+        final AlertDialog d = alertDialog.create();
+        Window window = d.getWindow();
+        WindowManager.LayoutParams wlp;
+        if (window != null) {
+            wlp = window.getAttributes();
+        }
+        else {
+            return;
+        }
+        wlp.gravity = Gravity.TOP;
+        wlp.flags &= ~WindowManager.LayoutParams.FLAG_DIM_BEHIND;
+        window.setAttributes(wlp);
+        input.setOnEditorActionListener(new TextView.OnEditorActionListener()
+        {
+            public boolean onEditorAction(TextView v, int keyCode, KeyEvent event)
+            {
+                switch (keyCode)
+                {
+                    case KeyEvent.KEYCODE_DPAD_CENTER:
+                    case KeyEvent.KEYCODE_ENTER:
+                    case KeyEvent.KEYCODE_ENDCALL:
+                        handleAccessKey(input.getText().toString());
+                        d.cancel();
+                        return true;
+                    default:
+                        break;
+                }
+                return false;
+            }
+        });
+        window.setSoftInputMode(
+                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        d.show();
+    }
+
+    private void handleAccessKey(String result) {
+        mapwizePlugin.grantAccess(result, new ApiCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean object) {
+                Handler uiHandler = new Handler(Looper.getMainLooper());
+                Runnable runnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        AlertDialog.Builder alertDialog = new AlertDialog.Builder(MapActivity.this);
+                        alertDialog.setTitle("Access key");
+                        alertDialog.setMessage("New access has been granted");
+                        alertDialog.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.cancel();
+                            }
+                        });
+                        alertDialog.show();
+                    }
+                };
+                uiHandler.post(runnable);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                Handler uiHandler = new Handler(Looper.getMainLooper());
+                Runnable runnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        AlertDialog.Builder alertDialog = new AlertDialog.Builder(MapActivity.this);
+                        alertDialog.setTitle("Access key");
+                        alertDialog.setMessage("Invalid access key");
+                        alertDialog.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.cancel();
+                            }
+                        });
+                        alertDialog.show();
+                    }
+                };
+                uiHandler.post(runnable);
+            }
+        });
     }
 
     private void initSearchDataManager() {
@@ -724,8 +852,11 @@ public class MapActivity extends AppCompatActivity {
             }
         });
 
-        mapwizePlugin.setOnPlaceClickListener(null);
+        distanceDirectionImage = findViewById(R.id.distance_icon);
+        timeDirectionTextView = findViewById(R.id.time_text);
+        distanceDirectionTextView = findViewById(R.id.distance_text);
 
+        mapwizePlugin.setOnPlaceClickListener(null);
         mapwizePlugin.setOnMapClickListener(null);
     }
 
@@ -803,7 +934,7 @@ public class MapActivity extends AppCompatActivity {
     private void directionToMapTransition() {
         uiSceneRoot = findViewById(R.id.ui_scene_root);
         Scene scene = Scene.getSceneForLayout(uiSceneRoot, R.layout.activity_map_scene, this);
-        Transition transition = TransitionInflater.from(this).inflateTransition(R.transition.select_content_to_direction_transition);
+        Transition transition = TransitionInflater.from(this).inflateTransition(R.transition.direction_to_map_transition);
         transition.addListener(new Transition.TransitionListener() {
             @Override
             public void onTransitionStart(@NonNull Transition transition) {
@@ -1056,15 +1187,41 @@ public class MapActivity extends AppCompatActivity {
         });
     }
 
-    private void startDirection(MapwizeObject from, MapwizeObject to, boolean isAccessible) {
+    private void startDirection(MapwizeObject from, MapwizeObject to, final boolean isAccessible) {
         mapwizePlugin.removeMarkers();
         DirectionPoint f = (DirectionPoint) from;
         DirectionPoint t = (DirectionPoint) to;
         Api.getDirection(f, t, isAccessible, new ApiCallback<Direction>() {
             @Override
-            public void onSuccess(Direction direction) {
+            public void onSuccess(final Direction direction) {
                 DirectionOptions.Builder optsBuilder = new DirectionOptions.Builder();
                 mapwizePlugin.setDirection(direction, optsBuilder.build());
+
+                new Handler(Looper.getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        distanceDirectionImage.setImageResource(!isAccessible ? R.drawable.ic_directions_walk_black_24dp : R.drawable.ic_accessible_black_24dp);
+                        long time = Math.round(direction.getTraveltime() / 60);
+                        String timPlaceHolder = "%1$d min";
+                        timeDirectionTextView.setText(String.format(timPlaceHolder,time));
+                        distanceDirectionTextView.setText(UnitLocale.distanceAsString(direction.getDistance()));
+
+                        final CardView headerCardView = findViewById(R.id.header_card);
+                        ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams)headerCardView.getLayoutParams();
+                        ValueAnimator heightAnimator = ValueAnimator.ofInt(params.height, convertDpToPixel(92, MapActivity.this));
+                        heightAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                            @Override
+                            public void onAnimationUpdate(ValueAnimator animation) {
+                                ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams)headerCardView.getLayoutParams();
+                                params.height = (int)animation.getAnimatedValue();
+                                headerCardView.setLayoutParams(params);
+                            }
+                        });
+                        heightAnimator.setDuration(250);
+                        heightAnimator.start();
+                        headerCardView.setVisibility(View.VISIBLE);
+                    }
+                });
             }
 
             @Override
