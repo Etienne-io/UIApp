@@ -7,10 +7,12 @@ import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Camera;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
@@ -114,6 +116,8 @@ public class MapActivity extends AppCompatActivity {
 
     // Bottom Menu
     private ImageView accessKeyImageView;
+    private ImageView contactImageView;
+    private ImageView aboutMapwizeImageView;
 
     // Location provider
     private FusedGpsIndoorLocationProvider locationProvider;
@@ -123,7 +127,7 @@ public class MapActivity extends AppCompatActivity {
     private MapwizeObject fromDirectionPoint;
     private MapwizeObject toDirectionPoint;
     private boolean isAccessible = false;
-    private TextView directionButton;
+    private Button directionButton;
     private EditText fromDirectionEditText;
     private EditText toDirectionEditText;
     private ImageView fromDirectionImage;
@@ -141,18 +145,16 @@ public class MapActivity extends AppCompatActivity {
         setContentView(R.layout.activity_map);
         mapView = findViewById(R.id.mapboxMap);
         mapView.onCreate(savedInstanceState);
-
         MapOptions mapOptions = new MapOptions.Builder()
                 .language("en")
                 .build();
         UISettings uiSettings = new UISettings.Builder(this)
                 .showUserPositionControl(false)
-                .showFloorControl(false)
-                .mapwizeCompassEnabled(false)
+                .showFloorControl(true)
+                .mapwizeCompassEnabled(true)
                 .logoEnabled(false)
                 .build();
         mapwizePlugin = new MapwizePlugin(mapView, mapOptions, uiSettings);
-
         initSettingsLayout();
         setupMapwizeListeners();
         setupMapUiSceneComponent();
@@ -191,6 +193,24 @@ public class MapActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 displayAccessDialog();
+                dialog.dismiss();
+            }
+        });
+
+        contactImageView = dialog.findViewById(R.id.contact_icon);
+        contactImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openContact();
+                dialog.dismiss();
+            }
+        });
+
+        aboutMapwizeImageView = dialog.findViewById(R.id.info_icon);
+        aboutMapwizeImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openInfo();
                 dialog.dismiss();
             }
         });
@@ -256,6 +276,26 @@ public class MapActivity extends AppCompatActivity {
         window.setSoftInputMode(
                 WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         d.show();
+    }
+
+    private void openContact() {
+        Intent emailIntent=new Intent(android.content.Intent.ACTION_SEND);
+        emailIntent.setType("text/plain");
+        emailIntent.putExtra(android.content.Intent.EXTRA_EMAIL, new String[]{  "support@mapwize.io"});
+        emailIntent.setType("message/rfc822");
+        try {
+            startActivity(Intent.createChooser(emailIntent,
+                    "Send email using..."));
+        } catch (android.content.ActivityNotFoundException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void openInfo() {
+        String url = "https://www.mapwize.io";
+        Intent i = new Intent(Intent.ACTION_VIEW);
+        i.setData(Uri.parse(url));
+        startActivity(i);
     }
 
     private void handleAccessKey(String result) {
@@ -1194,12 +1234,12 @@ public class MapActivity extends AppCompatActivity {
         Api.getDirection(f, t, isAccessible, new ApiCallback<Direction>() {
             @Override
             public void onSuccess(final Direction direction) {
-                DirectionOptions.Builder optsBuilder = new DirectionOptions.Builder();
-                mapwizePlugin.setDirection(direction, optsBuilder.build());
+                final DirectionOptions.Builder optsBuilder = new DirectionOptions.Builder();
 
                 new Handler(Looper.getMainLooper()).post(new Runnable() {
                     @Override
                     public void run() {
+                        mapwizePlugin.setDirection(direction, optsBuilder.build());
                         distanceDirectionImage.setImageResource(!isAccessible ? R.drawable.ic_directions_walk_black_24dp : R.drawable.ic_accessible_black_24dp);
                         long time = Math.round(direction.getTraveltime() / 60);
                         String timPlaceHolder = "%1$d min";
@@ -1401,6 +1441,8 @@ public class MapActivity extends AppCompatActivity {
         mapwizePlugin.setOnDidLoadListener(new MapwizePlugin.OnDidLoadListener() {
             @Override
             public void didLoad(MapwizePlugin mapwizePlugin) {
+                mapwizePlugin.setBottomPadding(convertDpToPixel(100, MapActivity.this));
+                mapwizePlugin.setTopPadding(convertDpToPixel(24, MapActivity.this));
                 mapwizePlugin.setLocationProvider(locationProvider);
             }
         });
@@ -1440,6 +1482,7 @@ public class MapActivity extends AppCompatActivity {
 
                     }
                 });
+                Picasso.get().load(venue.getIcon()).resize(convertDpToPixel(20, MapActivity.this), convertDpToPixel(20, MapActivity.this)).into(settingsButton);
             }
         });
 
